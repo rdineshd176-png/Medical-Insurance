@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Medical Insurance Prediction</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🏥 Medical Insurance Prediction System</h1>
+            <p>Get your personalized insurance premium prediction</p>
+        </div>
+
+        {% if error %}
+        <div class="error-message">
+            {{ error }}
+        </div>
+        {% endif %}
+
+        <form method="POST" action="/predict" class="insurance-form">
+            <div class="form-section">
+                <h2>Personal Information</h2>
+                <div class="form-group">
+                    <label for="name">Full Name:</label>
+                    <input type="text" id="name" name="name" required>
+                </div>
+                
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="age">Age:</label>
+                        <input type="number" id="age" name="age" min="18" max="100" required>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="sex">Sex:</label>
+                        <select id="sex" name="sex" required>
+                            <option value="">Select</option>
+                            <option value="male">Male</option>
+                            <option value="female">Female</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="marital_status">Marital Status:</label>
+                        <select id="marital_status" name="marital_status" required>
+                            <option value="">Select</option>
+                            <option value="single">Single</option>
+                            <option value="married">Married</option>
+                        </select>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="children">Number of Children:</label>
+                        <input type="number" id="children" name="children" min="0" max="10" required>
+                    </div>
+                </div>
+            </div>
+
+            <div class="form-section">
+                <h2>Health Information</h2>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="bmi">BMI:</label>
+                        <input type="number" id="bmi" name="bmi" step="0.1" min="15" max="50" required>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="smoker">Smoker:</label>
+                        <select id="smoker" name="smoker" required>
+                            <option value="">Select</option>
+                            <option value="yes">Yes</option>
+                            <option value="no">No</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label for="past_conditions">Past Medical Conditions:</label>
+                    <select id="past_conditions" name="past_conditions" required>
+                        <option value="">Select</option>
+                        <option value="none">None</option>
+                        <option value="asthma">Asthma</option>
+                        <option value="hypertension">Hypertension</option>
+                        <option value="diabetes">Diabetes</option>
+                        <option value="heart_disease">Heart Disease</option>
+                    </select>
+                </div>
+            </div>
+
+            <div class="form-section">
+                <h2>Lifestyle Information</h2>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="daily_steps">Daily Steps:</label>
+                        <input type="number" id="daily_steps" name="daily_steps" min="0" max="30000" required>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="exercise_hours">Exercise Hours/Week:</label>
+                        <input type="number" id="exercise_hours" name="exercise_hours" step="0.5" min="0" max="20" required>
+                    </div>
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="sleep_hours">Sleep Hours/Day:</label>
+                        <input type="number" id="sleep_hours" name="sleep_hours" step="0.5" min="0" max="12" required>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="salary">Annual Salary (₹):</label>
+                        <input type="number" id="salary" name="salary" min="0" required>
+                    </div>
+                </div>
+            </div>
+
+            <div class="form-section">
+                <h2>Other Information</h2>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="region">Region:</label>
+                        <select id="region" name="region" required>
+                            <option value="">Select</option>
+                            <option value="northeast">Northeast</option>
+                            <option value="northwest">Northwest</option>
+                            <option value="southeast">Southeast</option>
+                            <option value="southwest">Southwest</option>
+                        </select>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="profession">Profession:</label>
+                        <input type="text" id="profession" name="profession" required>
+                    </div>
+                </div>
+            </div>
+
+            <button type="submit" class="submit-btn">Predict Insurance Premium</button>
+        </form>
+    </div>
+</body>
+</html>

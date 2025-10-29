@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Insurance Prediction Result</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+    <div class="container">
+        <div class="result-header">
+            <h1>📊 Insurance Prediction Result</h1>
+        </div>
+
+        <div class="result-card">
+            <div class="result-section">
+                <h2>👤 Personal Report for {{ name }}</h2>
+                
+                <div class="premium-breakdown">
+                    <div class="premium-item main-premium">
+                        <span class="label">💰 Predicted Insurance Premium:</span>
+                        <span class="value">₹{{ "%.2f"|format(premium) }}</span>
+                    </div>
+                    
+                    <div class="premium-item">
+                        <span class="label">➡ Normal Insurance (60%):</span>
+                        <span class="value">₹{{ "%.2f"|format(normal_insurance) }}</span>
+                    </div>
+                    
+                    <div class="premium-item">
+                        <span class="label">➡ Emergency Insurance (40%):</span>
+                        <span class="value">₹{{ "%.2f"|format(emergency_insurance) }}</span>
+                    </div>
+                    
+                    <div class="premium-item discount">
+                        <span class="label">🎁 Lifestyle Discount Applied:</span>
+                        <span class="value">{{ discount }}</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="suggestions-section">
+                <h2>✅ Suggestions for You</h2>
+                <ul class="suggestions-list">
+                    {% for suggestion in suggestions %}
+                    <li>{{ suggestion }}</li>
+                    {% endfor %}
+                </ul>
+            </div>
+
+            <div class="action-buttons">
+                <a href="/" class="btn-primary">← Predict Another Person</a>
+            </div>
+        </div>
+    </div>
+</body>
+</html>
