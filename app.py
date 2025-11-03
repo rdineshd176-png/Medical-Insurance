@@ -63,13 +63,13 @@ class InsurancePredictor:
             # Predict base premium
             premium = self.model.predict(input_data)[0]
 
-            # Extract features for discount calculation
+            # Extract features for discount calculation (updated indices)
             age = input_data[0, 0]
             bmi = input_data[0, 2]
             smoker = input_data[0, 4]
-            steps = input_data[0, 9]
-            exercise = input_data[0, 10]
-            sleep = input_data[0, 11]
+            steps = input_data[0, 8]    # updated index
+            exercise = input_data[0, 9] # updated index
+            sleep = input_data[0, 10]   # updated index
 
             # Apply healthy lifestyle discount
             discount = 0
@@ -111,36 +111,33 @@ def index():
 @app.route('/predict', methods=['POST'])
 def predict():
     try:
-        # Get form data
+        # Get form data (removed region)
         name = request.form['name']
         age = int(request.form['age'])
         sex = request.form['sex']
         marital_status = request.form['marital_status']
         salary = int(request.form['salary'])
+        profession = request.form['profession']  # Moved here
         bmi = float(request.form['bmi'])
         children = int(request.form['children'])
         smoker = request.form['smoker']
-        region = request.form['region']
         past_conditions = request.form['past_conditions']
-        profession = request.form['profession']
         daily_steps = int(request.form['daily_steps'])
         exercise_hours = float(request.form['exercise_hours'])
         sleep_hours = float(request.form['sleep_hours'])
 
-        # Encode categorical inputs using loaded encoders
+        # Encode categorical inputs using loaded encoders (removed region)
         try:
             sex_enc = predictor.le_dict['sex'].transform([sex])[0] if sex in predictor.le_dict['sex'].classes_ else 0
             smoker_enc = predictor.le_dict['smoker'].transform([smoker])[0] if smoker in predictor.le_dict['smoker'].classes_ else 0
-            region_enc = predictor.le_dict['region'].transform([region])[0] if region in predictor.le_dict['region'].classes_ else 0
             past_cond_enc = predictor.le_dict['past_conditions'].transform([past_conditions])[0] if past_conditions in predictor.le_dict['past_conditions'].classes_ else 0
             profession_enc = predictor.le_dict['profession'].transform([profession])[0] if profession in predictor.le_dict['profession'].classes_ else 0
         except Exception as e:
             return render_template('index.html', error=f"Error encoding input: {str(e)}. Please check your input values.")
 
-        # Create input array in correct feature order
+        # Create input array in correct feature order (removed region)
         input_data = np.array([[age, sex_enc, bmi, children, smoker_enc, past_cond_enc,
-                              region_enc, profession_enc, salary, daily_steps,
-                              exercise_hours, sleep_hours]])
+                              profession_enc, salary, daily_steps, exercise_hours, sleep_hours]])
 
         # Make prediction
         result = predictor.predict(input_data, name, marital_status)
@@ -171,27 +168,24 @@ def api_predict():
         sex = data['sex']
         marital_status = data.get('marital_status', 'single')
         salary = int(data['salary'])
+        profession = data['profession']
         bmi = float(data['bmi'])
         children = int(data['children'])
         smoker = data['smoker']
-        region = data['region']
         past_conditions = data['past_conditions']
-        profession = data['profession']
         daily_steps = int(data['daily_steps'])
         exercise_hours = float(data['exercise_hours'])
         sleep_hours = float(data['sleep_hours'])
 
-        # Encode categorical inputs
+        # Encode categorical inputs (removed region)
         sex_enc = predictor.le_dict['sex'].transform([sex])[0] if sex in predictor.le_dict['sex'].classes_ else 0
         smoker_enc = predictor.le_dict['smoker'].transform([smoker])[0] if smoker in predictor.le_dict['smoker'].classes_ else 0
-        region_enc = predictor.le_dict['region'].transform([region])[0] if region in predictor.le_dict['region'].classes_ else 0
         past_cond_enc = predictor.le_dict['past_conditions'].transform([past_conditions])[0] if past_conditions in predictor.le_dict['past_conditions'].classes_ else 0
         profession_enc = predictor.le_dict['profession'].transform([profession])[0] if profession in predictor.le_dict['profession'].classes_ else 0
 
-        # Create input array
+        # Create input array (removed region)
         input_data = np.array([[age, sex_enc, bmi, children, smoker_enc, past_cond_enc,
-                              region_enc, profession_enc, salary, daily_steps,
-                              exercise_hours, sleep_hours]])
+                              profession_enc, salary, daily_steps, exercise_hours, sleep_hours]])
 
         # Make prediction
         result = predictor.predict(input_data, name, marital_status)
