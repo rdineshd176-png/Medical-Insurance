@@ -26,6 +26,9 @@ class InsurancePredictor:
             if os.path.exists('encoders.pkl'):
                 self.le_dict = joblib.load('encoders.pkl')
                 print("✅ Encoders loaded successfully!")
+                # Print available classes for debugging
+                for col, le in self.le_dict.items():
+                    print(f"   {col}: {list(le.classes_)}")
             else:
                 print("❌ encoders.pkl not found!")
                 return False
@@ -35,6 +38,50 @@ class InsurancePredictor:
         except Exception as e:
             print(f"❌ Error loading model/encoders: {str(e)}")
             return False
+    
+    def safe_encode(self, value, encoder, default_index=0):
+        """Safely encode a value with fallback to default"""
+        try:
+            if value in encoder.classes_:
+                return encoder.transform([value])[0]
+            else:
+                print(f"⚠️  Value '{value}' not in {encoder.classes_}, using default index {default_index}")
+                return default_index
+        except Exception as e:
+            print(f"⚠️  Encoding error for '{value}': {e}, using default index {default_index}")
+            return default_index
+    
+    def encode_past_conditions(self, condition_text):
+        """Encode past conditions text input"""
+        le = self.le_dict['past_conditions']
+        
+        if not condition_text:
+            return self.safe_encode('none', le)
+        
+        condition_text = condition_text.lower().strip()
+        
+        # Common conditions mapping
+        conditions_map = {
+            'none': 'none',
+            'no': 'none',
+            'healthy': 'none',
+            'asthma': 'asthma',
+            'diabetes': 'diabetes',
+            'hypertension': 'hypertension',
+            'high blood pressure': 'hypertension',
+            'heart disease': 'heart_disease',
+            'heart problem': 'heart_disease',
+            'blood pressure': 'hypertension'
+        }
+        
+        # Check if input matches any known condition
+        for key, value in conditions_map.items():
+            if key in condition_text:
+                condition_text = value
+                break
+        
+        # Use safe_encode to handle unknown conditions
+        return self.safe_encode(condition_text, le)
     
     def give_suggestions(self, age, bmi, smoker, steps, exercise, sleep, marital_status):
         """Generate health suggestions"""
@@ -111,31 +158,42 @@ def index():
 @app.route('/predict', methods=['POST'])
 def predict():
     try:
-        # Get form data (removed region)
+        # Get form data
         name = request.form['name']
         age = int(request.form['age'])
-        sex = request.form['sex']
-        marital_status = request.form['marital_status']
+        sex = request.form['sex'].lower()  # Convert to lowercase for consistency
+        marital_status = request.form['marital_status'].lower()
         salary = int(request.form['salary'])
-        profession = request.form['profession']  # Moved here
+        profession = request.form['profession']
         bmi = float(request.form['bmi'])
         children = int(request.form['children'])
-        smoker = request.form['smoker']
+        smoker = request.form['smoker'].lower()
         past_conditions = request.form['past_conditions']
         daily_steps = int(request.form['daily_steps'])
         exercise_hours = float(request.form['exercise_hours'])
         sleep_hours = float(request.form['sleep_hours'])
 
-        # Encode categorical inputs using loaded encoders (removed region)
+        # Encode categorical inputs with safe encoding
         try:
-            sex_enc = predictor.le_dict['sex'].transform([sex])[0] if sex in predictor.le_dict['sex'].classes_ else 0
-            smoker_enc = predictor.le_dict['smoker'].transform([smoker])[0] if smoker in predictor.le_dict['smoker'].classes_ else 0
-            past_cond_enc = predictor.le_dict['past_conditions'].transform([past_conditions])[0] if past_conditions in predictor.le_dict['past_conditions'].classes_ else 0
-            profession_enc = predictor.le_dict['profession'].transform([profession])[0] if profession in predictor.le_dict['profession'].classes_ else 0
+            sex_enc = predictor.safe_encode(sex, predictor.le_dict['sex'])
+            smoker_enc = predictor.safe_encode(smoker, predictor.le_dict['smoker'])
+            past_cond_enc = predictor.encode_past_conditions(past_conditions)
+            profession_enc = predictor.safe_encode(profession, predictor.le_dict['profession'])
+            
+            print(f"🔍 Encoding results:")
+            print(f"   Sex: '{sex}' -> {sex_enc}")
+            print(f"   Smoker: '{smoker}' -> {smoker_enc}")
+            print(f"   Past Conditions: '{past_conditions}' -> {past_cond_enc}")
+            print(f"   Profession: '{profession}' -> {profession_enc}")
+            
         except Exception as e:
-            return render_template('index.html', error=f"Error encoding input: {str(e)}. Please check your input values.")
+            error_msg = f"Error encoding input: {str(e)}. Available options - "
+            error_msg += f"Sex: {list(predictor.le_dict['sex'].classes_)}, "
+            error_msg += f"Smoker: {list(predictor.le_dict['smoker'].classes_)}, "
+            error_msg += f"Profession: {list(predictor.le_dict['profession'].classes_)}"
+            return render_template('index.html', error=error_msg)
 
-        # Create input array in correct feature order (removed region)
+        # Create input array
         input_data = np.array([[age, sex_enc, bmi, children, smoker_enc, past_cond_enc,
                               profession_enc, salary, daily_steps, exercise_hours, sleep_hours]])
 
@@ -155,57 +213,6 @@ def predict():
             
     except Exception as e:
         return render_template('index.html', error=f"Error processing request: {str(e)}")
-
-@app.route('/api/predict', methods=['POST'])
-def api_predict():
-    """API endpoint for programmatic access"""
-    try:
-        data = request.get_json()
-        
-        # Extract data (similar to form processing)
-        name = data.get('name', 'User')
-        age = int(data['age'])
-        sex = data['sex']
-        marital_status = data.get('marital_status', 'single')
-        salary = int(data['salary'])
-        profession = data['profession']
-        bmi = float(data['bmi'])
-        children = int(data['children'])
-        smoker = data['smoker']
-        past_conditions = data['past_conditions']
-        daily_steps = int(data['daily_steps'])
-        exercise_hours = float(data['exercise_hours'])
-        sleep_hours = float(data['sleep_hours'])
-
-        # Encode categorical inputs (removed region)
-        sex_enc = predictor.le_dict['sex'].transform([sex])[0] if sex in predictor.le_dict['sex'].classes_ else 0
-        smoker_enc = predictor.le_dict['smoker'].transform([smoker])[0] if smoker in predictor.le_dict['smoker'].classes_ else 0
-        past_cond_enc = predictor.le_dict['past_conditions'].transform([past_conditions])[0] if past_conditions in predictor.le_dict['past_conditions'].classes_ else 0
-        profession_enc = predictor.le_dict['profession'].transform([profession])[0] if profession in predictor.le_dict['profession'].classes_ else 0
-
-        # Create input array (removed region)
-        input_data = np.array([[age, sex_enc, bmi, children, smoker_enc, past_cond_enc,
-                              profession_enc, salary, daily_steps, exercise_hours, sleep_hours]])
-
-        # Make prediction
-        result = predictor.predict(input_data, name, marital_status)
-        
-        if result:
-            return jsonify({
-                'status': 'success',
-                'data': result
-            })
-        else:
-            return jsonify({
-                'status': 'error',
-                'message': 'Prediction failed'
-            }), 400
-            
-    except Exception as e:
-        return jsonify({
-            'status': 'error',
-            'message': str(e)
-        }), 400
 
 if __name__ == '__main__':
     app.run(debug=True, host='0.0.0.0', port=5000)

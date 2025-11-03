@@ -15,16 +15,8 @@ import os
 # ----------------------------
 # Step 1: Load Dataset
 # ----------------------------
-# Correct file path - use one of these options:
-
-# Option 1: Use raw string (recommended)
+# Use raw string for file path
 file_path = r"D:\100 days of 100 projects\medical insurance\medical_insurance_with_profession_salary_lifestyle.xlsx"
-
-# Option 2: Use forward slashes
-# file_path = "D:/100 days of 100 projects/medical insurance/medical_insurance_with_profession_salary_lifestyle.xlsx"
-
-# Option 3: Use double backslashes
-# file_path = "D:\\100 days of 100 projects\\medical insurance\\medical_insurance_with_profession_salary_lifestyle.xlsx"
 
 # Check if file exists
 if not os.path.exists(file_path):
@@ -49,16 +41,22 @@ for col in columns_to_drop:
 
 print(f"Columns after dropping: {list(data.columns)}")
 
-# Encode categorical variables (removed region)
-le_dict = {}
+# Standardize categorical values to lowercase
 categorical_columns = ['sex', 'smoker', 'past_conditions', 'profession']
+for col in categorical_columns:
+    if col in data.columns:
+        data[col] = data[col].astype(str).str.lower()
+        print(f"✅ Standardized {col} to lowercase")
 
+# Encode categorical variables
+le_dict = {}
 for col in categorical_columns:
     if col in data.columns:
         le = LabelEncoder()
         data[col] = le.fit_transform(data[col])
         le_dict[col] = le   # save encoder for later use
         print(f"✅ Encoded column: {col}")
+        print(f"   Classes: {list(le.classes_)}")
     else:
         print(f"⚠️  Column {col} not found in dataset")
 
@@ -104,9 +102,56 @@ except Exception as e:
     print(f"❌ Error saving model: {e}")
 
 # ----------------------------
-# Suggestion Function
+# Helper Functions
 # ----------------------------
+def encode_past_conditions(condition_text, le):
+    """Encode past conditions text input"""
+    if not condition_text:
+        return le.transform(['none'])[0]
+    
+    condition_text = condition_text.lower().strip()
+    
+    # Common conditions mapping
+    conditions_map = {
+        'none': 'none',
+        'no': 'none',
+        'healthy': 'none',
+        'asthma': 'asthma',
+        'diabetes': 'diabetes',
+        'hypertension': 'hypertension',
+        'high blood pressure': 'hypertension',
+        'heart disease': 'heart_disease',
+        'heart problem': 'heart_disease',
+        'blood pressure': 'hypertension'
+    }
+    
+    # Check if input matches any known condition
+    for key, value in conditions_map.items():
+        if key in condition_text:
+            condition_text = value
+            break
+    
+    # If condition not in trained classes, default to 'none'
+    if condition_text not in le.classes_:
+        condition_text = 'none'
+    
+    return le.transform([condition_text])[0]
+
+def safe_encode(value, encoder, default_index=0):
+    """Safely encode a value with fallback to default"""
+    try:
+        value = str(value).lower()
+        if value in encoder.classes_:
+            return encoder.transform([value])[0]
+        else:
+            print(f"⚠️  Value '{value}' not in {encoder.classes_}, using default index {default_index}")
+            return default_index
+    except Exception as e:
+        print(f"⚠️  Encoding error for '{value}': {e}, using default index {default_index}")
+        return default_index
+
 def give_suggestions(age, bmi, smoker, steps, exercise, sleep, marital_status):
+    """Generate health suggestions"""
     suggestions = []
     if smoker == 1:  
         suggestions.append("Quit smoking to reduce insurance premium.")
@@ -123,9 +168,7 @@ def give_suggestions(age, bmi, smoker, steps, exercise, sleep, marital_status):
     if marital_status.lower() == "single":
         suggestions.append("Consider family insurance plans if you marry in future.")
 
-    # ✅ Always encourage
     suggestions.append("Maintaining good and healthy habits will reduce your insurance premium over time.")
-
     return suggestions
 
 # ----------------------------
@@ -145,11 +188,11 @@ def predict_premium(user_data, name, marital_status):
 
     # Apply healthy lifestyle discount
     discount = 0
-    if smoker == 0: discount += 0.05   # 5% discount if non-smoker
-    if bmi < 25: discount += 0.05      # 5% discount for healthy BMI
-    if steps >= 7000: discount += 0.05 # 5% discount for active lifestyle
-    if exercise >= 1.5: discount += 0.05 # 5% discount for regular exercise
-    if sleep >= 7: discount += 0.05    # 5% discount for good sleep
+    if smoker == 0: discount += 0.05
+    if bmi < 25: discount += 0.05
+    if steps >= 7000: discount += 0.05
+    if exercise >= 1.5: discount += 0.05
+    if sleep >= 7: discount += 0.05
 
     # Apply discount (max 25%)
     premium = premium * (1 - min(discount, 0.25))
@@ -186,25 +229,25 @@ while True:
         print("\n--- Enter Details ---")
         name = input("Enter your name: ")
         age = int(input("Enter your age: "))
-        sex = input("Enter your sex (male/female): ")
-        marital_status = input("Enter marital status (single/married): ")
+        sex = input("Enter your sex (male/female): ").lower()
+        marital_status = input("Enter marital status (single/married): ").lower()
         salary = int(input("Enter your annual salary: "))
-        profession = input("Enter your profession: ")
+        profession = input("Enter your profession: ").lower()
         bmi = float(input("Enter your BMI: "))
         children = int(input("Enter number of children (or 0 if none): "))
-        smoker = input("Are you a smoker? (yes/no): ")
-        past_conditions = input("Enter past medical condition (none/asthma/hypertension/etc.): ")
+        smoker = input("Are you a smoker? (yes/no): ").lower()
+        past_conditions = input("Enter past medical condition (type any condition or 'none'): ")
         daily_steps = int(input("Enter your average daily steps: "))
         exercise_hours = float(input("Enter exercise hours per week: "))
         sleep_hours = float(input("Enter sleep hours per day: "))
 
-        # Encode categorical inputs using saved encoders
-        sex_enc = le_dict['sex'].transform([sex])[0] if sex in le_dict['sex'].classes_ else 0
-        smoker_enc = le_dict['smoker'].transform([smoker])[0] if smoker in le_dict['smoker'].classes_ else 0
-        past_cond_enc = le_dict['past_conditions'].transform([past_conditions])[0] if past_conditions in le_dict['past_conditions'].classes_ else 0
-        profession_enc = le_dict['profession'].transform([profession])[0] if profession in le_dict['profession'].classes_ else 0
+        # Encode categorical inputs using safe encoding
+        sex_enc = safe_encode(sex, le_dict['sex'])
+        smoker_enc = safe_encode(smoker, le_dict['smoker'])
+        past_cond_enc = encode_past_conditions(past_conditions, le_dict['past_conditions'])
+        profession_enc = safe_encode(profession, le_dict['profession'])
 
-        # Build input array (removed region)
+        # Build input array
         input_data = np.array([[age, sex_enc, bmi, children, smoker_enc, past_cond_enc,
                                 profession_enc, salary, daily_steps, exercise_hours, sleep_hours]])
 
@@ -212,8 +255,8 @@ while True:
         predict_premium(input_data, name, marital_status)
 
         # Ask for another person
-        cont = input("Do you want to enter another person? (yes/no): ")
-        if cont.lower() != "yes":
+        cont = input("Do you want to enter another person? (yes/no): ").lower()
+        if cont != "yes":
             print("\n✅ Thank you for using the Medical Insurance Prediction System!")
             break
             

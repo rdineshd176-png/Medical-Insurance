@@ -95,14 +95,12 @@
 
                 <div class="form-group">
                     <label for="past_conditions">Past Medical Conditions:</label>
-                    <select id="past_conditions" name="past_conditions" required>
-                        <option value="">Select</option>
-                        <option value="none">None</option>
-                        <option value="asthma">Asthma</option>
-                        <option value="hypertension">Hypertension</option>
-                        <option value="diabetes">Diabetes</option>
-                        <option value="heart_disease">Heart Disease</option>
-                    </select>
+                    <input type="text" id="past_conditions" name="past_conditions" 
+                           placeholder="e.g., none, asthma, diabetes, hypertension, heart disease" 
+                           required>
+                    <small style="color: #666; font-size: 12px; display: block; margin-top: 5px;">
+                        Enter conditions separated by commas, or type "none" if no conditions
+                    </small>
                 </div>
             </div>
 
